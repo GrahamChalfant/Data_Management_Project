@@ -1,0 +1,778 @@
+---
+title: "PartA"
+author: "Thies Schröder"
+date: "09/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+
+```{r}
+library(RSQLite)
+```
+
+Create database
+```{r}
+my_connection <- RSQLite::dbConnect(RSQLite::SQLite(), "hotel.db")
+#change name to name of hotel chain
+```
+
+
+```{r}
+tables <- RSQLite:: dbListTables(my_connection)
+print(tables)
+```
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS hotel;
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE hotel (
+hotel_ID VARCHAR(50) NOT NULL PRIMARY KEY,
+floors INT NOT NULL,
+name VARCHAR(255) NOT NULL,
+phone VARCHAR(50) NOT NULL,
+street_address VARCHAR(255) NOT NULL,
+city VARCHAR(255) NOT NULL,
+state VARCHAR(255) NULL,
+zip_code VARCHAR(255) NOT NULL,
+country VARCHAR(255) NOT NULL,
+number_of_rooms INT NOT NULL,
+URL VARCHAR(255)NOT NULL
+);
+```
+
+we are assuming that the state importance varies by country (US & UK)
+
+```{sql connection = my_connection}
+INSERT INTO hotel (Hotel_ID, floors, name,phone, street_address, City, State,Zip_Code, Country,  number_of_rooms, URL )
+VALUES (" H1", '9', "The Palace", "+44 (0)07955321", "11 Belsize Road", "London", "Greater London", "NW3 7AL","United Kingdom", '92', 'https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd'),
+("H2", '9', "The Castle", "+44 (0) 079955321"," 111 Kirby Corner Road", "Coventry", "Warwickshire", "CV4 7A", "United Kingdom", '90', 'https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd'),
+("H3", '7', "Westwood Hotel", "+44 (0) 7938372820", "34 Gibbet Hill Road", "Coventry", "Warwickshire", "CV4 7AL", "United Kingdom", "73", 'https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd'),
+("H4", '8', "Lansdown Hotel", " +44 (0) 3872903748", "36 Lansdown Road"," Bristol", "Avon", "BS6 6NS", "United Kingdom", "80","https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd"),
+("H5", "12", "Arlington Villas","+44(0) 3727494795", "10 Arlington Villas", "Bristol", "Avon"," BS8 1AD", "United Kingdom", "120", "https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd")
+```
+
+```{sql connection = my_connection}
+SELECT * 
+FROM hotel
+```
+
+
+
+As we are creating a data base for revenue, we assume that the hotel is already build and open for customers. Therefore, all information should be available and we do not allow adding hotels without full information and all attributes are specified as NOT NULL.  
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS room;
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE room (
+room_ID INTEGER  PRIMARY KEY AUTOINCREMENT,
+room_number VARCHAR(255) NOT NULL,
+high_floor BOOLEAN NOT NULL,
+room_type VARCHAR NULL,
+bed_number INT NOT NULL,
+hotel_ID INT NOT NULL,
+smoking BOOLEAN NOT NULL,
+maintenance BOOLEAN NOT NULL,
+balcony BOOLEAN NULL,
+FOREIGN KEY (hotel_ID) REFERENCES hotel(`hotel_ID`)
+);
+```
+
+```{sql connection= my_connection}
+INSERT INTO room (room_number, high_floor, room_type, bed_number, hotel_ID, smoking, maintenance, balcony)
+VALUES("200", FALSE, "Suite", "2", "H1", FALSE, TRUE, FALSE),
+("150", FALSE, "Single", "1", "H2", FALSE, TRUE, FALSE), 
+("Presidential Suite", TRUE, "Suite", "3", "H5", TRUE, TRUE, TRUE),
+("350", FALSE, "Double", "2", "H1", FALSE, FALSE, FALSE),
+("Executive Suite", TRUE, "Suite", "2", "H3", FALSE, TRUE, TRUE) 
+```
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM room
+```
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS guests;
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE guests (
+guest_id INTEGER PRIMARY KEY AUTOINCREMENT,
+document_type varchar(255) NOT NULL,
+document_no varchar(50) NOT NULL,
+document_expiration varchar(50),
+cell VARCHAR(50) NULL,
+work VARCHAR(50) NULL,
+home VARCHAR(50) NULL,
+email VARCHAR(50) NULL,
+street VARCHAR(255) NOT NULL,
+city VARCHAR(255) NOT NULL,
+state VARCHAR(255) NULL,
+country VARCHAR(255) NOT NULL,
+zip_code VARCHAR(100) NOT NULL,
+first TEXT NOT NULL,
+middle TEXT NULL,
+lastname TEXT NOT NULL
+);
+```
+
+We assume that one guest will use only one document for identification purposes. We will refuse guests that show up without a proper form of identification. We use TEXT for names to be able to store very long names.
+
+```{sql connection= my_connection}
+INSERT INTO guests (document_type, document_no, document_expiration, cell, work, home, email, street, city, state, country, zip_code, first, middle, lastname)
+VALUES ('passport', 'H14005265', '11/21/2025', '5041278989', ' ', '4522547887', 'dbambra0@ameblo.us' , 'New Wales', 'Nashville', 'Tennessee', 'United States', 'TN785246', 'James', 'Darin', 'Bambra'), ('driving licence', '2548523', '01/01/2025', '7778541245', '4521457842', ' ', 'dmccambrois1@smugmug.com', 'Gibbet Hill', 'Coventry', 'England', 'United Kingdom', 'CV7 4ER', 'Honey', 'Durand', 'McCambrois'), ('national id', '2142357896358', '08/11/2023', '7521455757',  ' ', '5478623146', 'spaal2@gmail.com', 'Stoneleigh', 'Belfast', 'Northern Ireland', 'United Kingdom', 'BE4 2SD', 'Steffen', 'Suellen', 'Paal'), ('passport', 'T34567818924', '07/07/2027', '4568527532', ' ', ' ', 'sbolens3@yellowbook.com', 'Daisy', 'Brussels', 'Brussels', 'Belgium', 'B66286', 'Burke', 'Siward', 'Bolens'), ('passport', 'E784135692', '12/04/2022', '5322877475', '2126644589', ' ', 'ahmet@aksoy.com.tr', 'Yasemin', 'Istanbul', 'Istanbul', 'Turkey', '34522', 'Ahmet', 'Ali', 'Aksoy'), ('driving licence', '178459645', '04/08/2027', '7552546352',  ' ', '5789634512', 'jdevonald5@dagondesign.com', 'Broad', 'Edinborough', 'Scotland', 'United Kingdom', 'ED1 5YH', 'Aili', 'Janel', 'Devonald'), ('driving licence', '156478962', '09/09/2026', '7895246321', '4786932178',  ' ', 'lworld6@mail.co.uk', 'Fouzol', 'Cardiff', 'Wales', 'United Kingdom', 'CR7 1SC', 'Bronnie', 'Lea', 'World'), ('passport', 'L10132478', '12/05/2025', '1593574562', '6564895145',  ' ', 'segiloff7@gravatar.com', 'Blumenkopf', 'Hamburg', 'Hamburg', 'Germany', 'H33915', 'Jacinthe', 'Saxon', 'Egiloff'), ('passport', 'P1432545', '09/06/2024', '1478526589',  ' ', ' ', 'spedgrift8@buzzfeed.com', 'Privet', 'Moscow', 'Moscow', 'Russia', 'M30096', 'Bartolomeo', 'Stanislas', 'Pedgrift'), ('passport', 'R3464894', '10/10/2028', '2486245178', '2133254562',  ' ', 'pstammirs9@google.it', 'Cafe', 'Milan', 'Milan', 'Italy', 'ML76310', 'Carolina', 'Phil', 'Stammirs')
+```
+
+```{sql connection= my_connection}
+SELECT * 
+FROM guests
+```
+
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS reservation_method;
+```
+
+```{sql connection= my_connection}
+CREATE TABLE reservation_method (
+    channel_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    method_name VARCHAR(255) NOT NULL,
+    external BOOLEAN NOT NULL,
+    booking_fee DECIMAL(2,2) NOT NULL
+    );
+```
+We do not use SERIAL for the channel_id as we want to specify them manually.
+
+```{sql connection= my_connection}
+INSERT INTO reservation_method (method_name, external, booking_fee)
+VALUES ('booking.com', TRUE, '0.2'), ('hotels.com', TRUE, '0.17'), ('tripadvisor.com', TRUE, '0.14'), ('Direct', FALSE, '0'), ('agoda.com', TRUE, '0.15'), ('trivago.com', TRUE, '0.15'), ('travelzoo.com', TRUE, '0.12'), ('travel.com', TRUE, '0.1')
+```
+
+
+```{sql connection= my_connection}
+SELECT * 
+FROM reservation_method
+```
+
+```{sql connection = my_connection}
+SELECT method_name, external
+FROM reservation_method
+WHERE external = TRUE
+```
+
+
+
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS reservation;
+```
+
+```{sql connection= my_connection}
+CREATE TABLE reservation (
+    reservation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    est_arrival_date DATE NOT NULL,
+    est_departure_date DATE NOT NULL,
+    card_number CHAR(16) NOT NULL,
+    card_expiration DATE NOT NULL,
+    amount_rooms INT DEFAULT 1,
+    price INT NOT NULL,
+    bed_number INT NOT NULL,
+    smoke BOOLEAN NOT NULL,
+    high_floor BOOLEAN NOT NULL,
+    guest_id INTEGER NOT NULL,
+    hotel_id VARCHAR(50) NOT NULL,
+    channel_id INTEGER NOT NULL,
+    FOREIGN KEY (guest_id) REFERENCES guests(guest_id),
+    FOREIGN KEY (hotel_id) REFERENCES hotel(hotel_id), 
+    FOREIGN KEY (channel_id) REFERENCES reservation_method(channel_id)
+    );
+```
+We will use the first of the month for card_expiration always. We assume that all further restrictions are handled by the booking services.
+DID NOT INCLUDE ANCILLIARY IN RESERVATIONS YET!
+
+```{sql connection= my_connection}
+INSERT INTO reservation (est_arrival_date, est_departure_date, card_number, card_expiration, amount_rooms, price, bed_number, smoke, high_floor, guest_id, hotel_id, channel_id)
+VALUES
+('11/06/2020', '11/07/2020', '3742885837672140', '01/01/2022', '1', '78', '1', FALSE, TRUE, '1', 'H1', '1'), 
+('11/07/2020', '11/10/2020', '3557162486807420', '05/01/2025', '1', '165', '2', FALSE, FALSE, '2', 'H2', '2'), 
+('11/09/2020', '11/11/2020', '3580159259721570', '12/01/2023', '1', '150', '2', TRUE, TRUE, '3', 'H3', '3'), 
+('11/11/2020', '11/13/2020', '2018218612241250', '11/01/2024', '1', '102',	'1', TRUE, FALSE, '4', 'H4', '4'), 
+('10/29/2020', '11/01/2020', '5602241259403700', '01/01/2022', '1', '180', '3', TRUE, TRUE, '5', 'H6', '5'), 
+('11/09/2020', '11/12/2020', '4102232443303040', '05/01/2021', '1', '120', '1', TRUE, FALSE, '6', 'H1', '6'), 
+('11/07/2020', '11/10/2020', '9449088987140000', '06/01/2022', '1', '140', '2', FALSE, TRUE, '7', 'H2', '7'), 
+('11/04/2020', '11/05/2020', '4844526297259470', '08/01/2023', '1', '160', '3', FALSE, FALSE, '8', 'H3', '8'), 
+('11/01/2020', '11/04/2020', '2719047610465000', '11/01/2026', '1', '220', '3', FALSE, TRUE, '9', 'H4', '9'), 
+('11/04/2020', '11/05/2020', '6201667373467110', '12/01/2022', '1', '80', '1', FALSE, FALSE, '10', 'H5', '10'),
+('01/06/2020', '11/06/2020', '6201662341267113', '12/01/2022', '1', '85', '1', FALSE, FALSE, '4', 'H5', '10'),
+('01/06/2020', '11/06/2020', '6201662341267113', '12/01/2022', '1', '99', '1', FALSE, FALSE, '2', 'H6', '1'),
+('01/06/2020', '11/06/2020', '6201662341267113', '12/01/2022', '1', '56', '1', FALSE, FALSE, '1', 'H1', '9')
+```
+
+
+```{sql connection = my_connection}
+SELECT *
+FROM reservation
+```
+
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS type_of_charge;
+```
+
+```{sql connection= my_connection}
+CREATE TABLE type_of_charge (
+type_of_charge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+charge_name VARCHAR(255) NOT NULL);
+```
+
+```{sql connection = my_connection}
+-- Creating information for the type_of_charge
+INSERT INTO type_of_charge (charge_name)
+VALUES ('room'), ('mini bar'), ('extra cleaning'), ('restaurant'), ('bar'), ('hotel cafe'), ('spa'), ('gift shop'), ('payment'), ('seminar room'), ('dinning room'), ('breakfast'), ('banquet room'), ('rental services')
+```
+
+```{sql connection = my_connection}
+SELECT * 
+FROM type_of_charge;
+```
+
+
+
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS charges;
+```
+
+```{sql connection= my_connection}
+CREATE TABLE charges (
+charge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+amount NUMERIC NOT NULL,
+date DATE NOT NULL,
+type_of_charge INT NOT NULL,
+guest_id INT NOT NULL,
+invoice_id INT NOT NULL,
+FOREIGN KEY (guest_id) REFERENCES guests (guest_id),
+FOREIGN KEY (invoice_id) REFERENCES invoice (invoice_id),
+FOREIGN KEY (type_of_charge) REFERENCES type_of_charge(type_of_charge_id)
+);
+```
+
+```{sql connection = my_connection}
+-- Inserting information for charges
+INSERT INTO charges (amount, date, type_of_charge, guest_id, invoice_id)
+VALUES 
+('100', '11/10/2020', '1', '1', '1'),
+('50', '11/11/2020', '5', '3', '2'), 
+('75', '11/13/2020', '6', '4', '3'), 
+('10', '11/01/2020', '5', '5', '4'), 
+('60', '11/05/2020', '5', 7, '5'), 
+('100', '11/04/2020', '5', '7', '5'), 
+('200', '11/10/2020', '5', '1', '1'), 
+('-290', '11/13/2020', '9', '1', '1')
+```
+
+```{sql connection = my_connection}
+SELECT * 
+FROM charges
+```
+
+
+```{sql connection = my_connection}
+-- Which guest has spent the most money
+SELECT c.charge_id, c.invoice_id, c.amount, c.type_of_charge, t.charge_name,i.guest_id, i.date
+FROM charges AS c
+INNER JOIN invoices AS i 
+ON c.invoice_id = i.invoice_id
+INNER JOIN type_of_charge AS t
+ON c.type_of_charge = t.type_of_charge_id
+WHERE invoice_id = 1
+```
+
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS invoices;
+```
+
+```{sql connection= my_connection}
+CREATE TABLE invoices (
+invoice_id INTEGER PRIMARY KEY AUTOINCREMENT,
+date DATE NOT NULL,
+guest_id INTEGER NOT NULL,
+FOREIGN KEY (guest_id) REFERENCES guests (guest_id)
+);
+```
+
+
+```{sql connection = my_connection}
+-- Inserting information for invoices
+INSERT INTO invoices (invoice_id, date, guest_id)
+VALUES 
+('1', '11/14/2020', '1'), 
+('2', '11/12/2020', '2'), 
+('3', '11/15/2020', '3'),
+('4', '11/02/2020', '4'), 
+('5', '11/06/2020', '5');
+```
+
+```{sql connection = my_connection}
+SELECT * 
+FROM invoices;
+```
+```{sql connection = my_connection}
+DROP TABLE IF EXISTS check_in_info;
+```
+
+```{sql connection= my_connection}
+CREATE TABLE check_in_info ( 
+check_in_id INTEGER PRIMARY KEY AUTOINCREMENT, 
+room_id INTEGER NOT NULL, 
+hotel_id VARCHAR(50) NOT NULL, 
+guest_id INTEGER NOT NULL, 
+reservation_id INTEGER NOT NULL, 
+check_in_date DATE NOT NULL, 
+check_out_date DATE NOT NULL, 
+FOREIGN KEY (guest_id) REFERENCES guests (guest_id),
+FOREIGN KEY (hotel_id) REFERENCES hotel (hotel_id),
+FOREIGN KEY (reservation_id) REFERENCES reservation (reservation_id),
+FOREIGN KEY (room_id) REFERENCES room (room_id)
+);
+```
+
+
+```{sql connection = my_connection}
+INSERT INTO check_in_info (room_id, hotel_id, guest_id, reservation_id, check_in_date, check_out_date)
+VALUES 
+('01', 'H1', '1', '5', '27/1/2020', '28/1/2020'),
+('2', 'H2', '2', '4', '12/1/2020', '1/2/2020'),
+('3', 'H2', '3', '3', '16/4/2020', '29/9/2020'),
+('4', 'H3', '4', '1', '8/6/2020',	'4/9/2020'),
+('5', 'H5', '5', '2', '12/12/2019', '15/12/2019'),
+('6', 'H4', '6', '9', '5/3/2020',	'15/3/2020'),
+('20', 'H4', '21', '10', '3/5/2020', '6/5/2020'),
+('18', 'H4', '25', '8', '1/12/2020', '4/12/2020'),
+('7', 'H3', '16', '6', '7/8/2020', '17/9/2020'),
+('3', 'H1', '20', '7', '20/10/2020', '25/10/2020')
+```
+
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM check_in_info
+```
+
+
+We assume that each room needs a separate check-in. If one reservation is made for many rooms, we will still have one check in for one room.
+
+
+The invoice amount printed on the actual invoice will be calculated via a query. 
+
+
+
+# Queries
+
+1.	The total spent for the customer for a particular stay (checkout invoice).
+
+```{sql connection = my_connection}
+SELECT c.guest_id, c.invoice_id, SUM(c.amount) AS outstanding_amount, SUM(CASE WHEN c.type_of_charge != 9 THEN c.amount END) AS total_invoice_amount, CASE WHEN 
+FROM charges as c
+LEFT JOIN invoices as i
+USING(invoice_id)
+--WHERE c.type_of_charge != 9
+GROUP BY invoice_id;
+```
+
+
+
+
+
+# Queries 2
+task 2 (c)
+```{sql connection=my_connection}
+Select guest_id, sum(amount)  "total_charges" 
+from charges 
+where amount >0 
+group by guest_id
+order by total_charges desc
+limit 5 
+```
+```{sql connection=my_connection}
+# queries 2(b)
+```{sql connection=my_connection}
+select sum(amount), datetime('now') "total_charges"
+from charges 
+where date between datetime('now') AND datetime('now', '-1 month')
+group by guest_id
+order by amount desc
+```
+queries 2 (c)
+ ```{sql connection=my_connection}
+select sum(amount), datetime('now') "total_charges"
+from charges 
+where date between datetime('now') AND datetime('now', '-1 year')
+group by guest_id
+order by amount desc
+```
+
+## query 3 
+```{sql connection= my_connection}
+select count (country), country
+from guests
+group by country 
+order by count(country) desc
+```
+
+
+```{sql connection = my_connection}
+SELECT *
+FROM charges
+WHERE invoice_id = 4
+```
+SHOULD WE DELETE GUEST ID IN INVOICES?
+
+
+
+
+```{r}
+RSQLite::dbDisconnect(my_connection)
+```
+
+
+
+
+
+
+4.	How much did the hotel pay in referral fees for each of the platforms that we have contracted with?
+
+```{sql connection = my_connection}
+SELECT method_name AS platform, sum(price), booking_fee AS percentage, sum(price*booking_fee) AS fee
+FROM reservation
+INNER JOIN reservation_method AS m
+USING(channel_id)
+WHERE channel_id != 4 --not internal
+GROUP BY channel_id
+```
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM reservation_method
+```
+
+
+
+SELECT r. 
+CASE WHEN 
+FROM charges as c
+LEFT JOIN invoices as i
+USING(invoice_id)
+--WHERE c.type_of_charge != 9
+GROUP BY invoice_id;
+
+
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM hotel
+```{sql connection= my_connection}
+DROP TABLE IF EXISTS check_in_info;
+CREATE TABLE check_in_info ( 
+check_in_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, 
+room_id SERIAL NOT NULL, 
+hotel_id SERIAL NOT NULL, 
+guest_id SERIAL NOT NULL, 
+reservation_id SERIAL NOT NULL, 
+check_in_date DATE NOT NULL, 
+check_out_date DATE NOT NULL, 
+FOREIGN KEY (guest_id) REFERENCES guests (guest_id),
+FOREIGN KEY (hotel_id) REFERENCES hotel (hotel_id),
+FOREIGN KEY (reservation_id) REFERENCES reservation (reservation_id)
+);
+```
+
+We assume that each room needs a separate check-in. If one reservation is made for many rooms, we will still have one check in for one room.
+
+
+The invoice amount printed on the actual invoice will be calculated via a query. 
+
+
+As we are creating a data base for revenue, we assume that the hotel is already build and open for customers. Therefore, all information should be available and we do not allow adding hotels without full information and all attributes are specified as NOT NULL.  
+
+
+```{sql connection= my_connection}
+DROP TABLE IF EXISTS room;
+CREATE TABLE room (
+room_ID INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+room_name VARCHAR(100) NOT NULL,
+high_floor BOOLEAN NOT NULL,
+room_type_ID VARCHAR NULL,
+bed_number INT NOT NULL,
+hotel_ID INT NOT NULL,
+smoking BOOLEAN NOT NULL,
+maintenance BOOLEAN NOT NULL,
+balcony BOOLEAN NULL,
+FOREIGN KEY (hotel_ID) REFERENCES hotel(`hotel_ID`)
+);
+```
+
+```{sql connection= my_connection}
+INSERT INTO room (room_id, room_name, high_floor, room_type_ID, bed_number, hotel_ID, smoking, maintenance, balcony)
+VALUES( "H1_01", "Junior suite", "NO", "Junior Suite", "2", "H1", "NO", "YES", "NO"),
+("H2_26", "Single", "NO", "Single", "1", "H2", "NO", "YES", "NO"), 
+("H5_60", "Presidential Suite", "YES", "Presidential Suite", "3", "H5", "YES", "YES", "YES"),
+("H1_43", "Double", "NO", "Double", "2", "H1", "NO", "NO", "NO"),
+("H3_73", "Executive Suite", "YES", "Executive Suite", "2", "H3", "NO", "YES", "YES") 
+```
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM room
+```
+
+
+```{sql connection = my_connection}
+````
+
+
+```{sql connection= my_connection}
+DROP TABLE IF EXISTS guests;
+CREATE TABLE guests (
+guest_id INTEGER PRIMARY KEY AUTOINCREMENT,
+document_type varchar(255) NULL,
+document_no varchar(50) NOT NULL,
+document_expiration varchar(50),
+cell VARCHAR(50) NULL,
+work VARCHAR(50) NULL,
+home VARCHAR(50) NULL,
+email VARCHAR(50) NULL,
+street VARCHAR(255) NOT NULL,
+city VARCHAR(255) NOT NULL,
+state VARCHAR(255)  NULL,
+country VARCHAR(255) NOT NULL,
+zip_code VARCHAR(100) NOT NULL,
+first TEXT NOT NULL,
+middle TEXT NULL,
+lastname TEXT NOT NULL
+);
+```
+
+We assume that one guest will use only one document for identification purposes. We will refuse guests that show up without a proper form of identification. We use TEXT for names to be able to store very long names.
+
+Not all countries have states so state is not required.
+```{sql connection= my_connection}
+INSERT INTO guests (document_type, document_no, document_expiration, cell, work, home, email, street, city, state, country, zip_code, first, middle, lastname)
+VALUES ('passport', 'H14005265', '11/21/2025', '5041278989', ' ', '4522547887', 'dbambra0@ameblo.us' , 'New Wales', 'Nashville', 'Tennessee', 'United States', 'TN785246', 'James', 'Darin', 'Bambra'), ('driving licence', '2548523', '01/01/2025', '7778541245', '4521457842', ' ', 'dmccambrois1@smugmug.com', 'Gibbet Hill', 'Coventry', 'England', 'United Kingdom', 'CV7 4ER', 'Honey', 'Durand', 'McCambrois'), ('national id', '2142357896358', '08/11/2023', '7521455757',  ' ', '5478623146', 'spaal2@gmail.com', 'Stoneleigh', 'Belfast', 'Northern Ireland', 'United Kingdom', 'BE4 2SD', 'Steffen', 'Suellen', 'Paal'), ('passport', 'T34567818924', '07/07/2027', '4568527532', ' ', ' ', 'sbolens3@yellowbook.com', 'Daisy', 'Brussels', 'Brussels', 'Belgium', 'B66286', 'Burke', 'Siward', 'Bolens'), ('passport', 'E784135692', '12/04/2022', '5322877475', '2126644589', ' ', 'ahmet@aksoy.com.tr', 'Yasemin', 'Istanbul', 'Istanbul', 'Turkey', '34522', 'Ahmet', 'Ali', 'Aksoy'), ('driving licence', '178459645', '04/08/2027', '7552546352',  ' ', '5789634512', 'jdevonald5@dagondesign.com', 'Broad', 'Edinborough', 'Scotland', 'United Kingdom', 'ED1 5YH', 'Aili', 'Janel', 'Devonald'), ('driving licence', '156478962', '09/09/2026', '7895246321', '4786932178',  ' ', 'lworld6@mail.co.uk', 'Fouzol', 'Cardiff', 'Wales', 'United Kingdom', 'CR7 1SC', 'Bronnie', 'Lea', 'World'), ('passport', 'L10132478', '12/05/2025', '1593574562', '6564895145',  ' ', 'segiloff7@gravatar.com', 'Blumenkopf', 'Hamburg', 'Hamburg', 'Germany', 'H33915', 'Jacinthe', 'Saxon', 'Egiloff'), ('passport', 'P1432545', '09/06/2024', '1478526589',  ' ', ' ', 'spedgrift8@buzzfeed.com', 'Privet', 'Moscow', 'Moscow', 'Russia', 'M30096', 'Bartolomeo', 'Stanislas', 'Pedgrift'), ('passport', 'R3464894', '10/10/2028', '2486245178', '2133254562',  ' ', 'pstammirs9@google.it', 'Cafe', 'Milan', 'Milan', 'Italy', 'ML76310', 'Carolina', 'Phil', 'Stammirs')
+```
+
+```{sql connection= my_connection}
+SELECT * 
+FROM guests
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE reservation_method (
+    channel_id INT NOT NULL PRIMARY KEY,
+    method_name VARCHAR(255) NOT NULL,
+    methods BOOLEAN NOT NULL,
+    booking_fee DECIMAL(2,2) NOT NULL
+    );
+```
+We do not use SERIAL for the channel_id as we want to specify them manually.
+
+```{sql connection= my_connection}
+INSERT INTO reservation_method (channel_id, method_name, methods, booking_fee)
+VALUES ('c11', 'booking.com', 'External', '20%'), ('c12', 'hotels.com', 'External', '17%'), ('c13', 'tripadvisor.com', 'External', '14%'), ('c14', 'Direct', 'Internal', '0%'), ('c15', 'agoda.com', 'External', '15%'), ('c17', 'trivago.com', 'External', '15%'), ('c19', 'travelzoo.com', 'External', '12%'), ('c20', 'travel.com', 'External', '10%')
+```
+
+
+```{sql connection= my_connection}
+SELECT * 
+FROM reservation_method
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE reservation (
+    reservation_id SERIAL NOT NULL,
+    est_arrival_date DATE NOT NULL,
+    est_departure_date DATE NOT NULL,
+    card_number CHAR(16) NOT NULL,
+    card_expiration DATE NOT NULL,
+    amount_rooms INT DEFAULT 1,
+    room_price INT NOT NULL,
+    bed_number INT NOT NULL,
+    smoke BOOLEAN NOT NULL,
+    high_floor BOOLEAN NOT NULL,
+    guest_id SERIAL NOT NULL,
+    hotel_id SERIAL NOT NULL,
+    channel_id INT NOT NULL,
+    PRIMARY KEY (reservation_id)
+    FOREIGN KEY (guest_id) REFERENCES guests(guest_id),
+    FOREIGN KEY (hotel_id) REFERENCES hotel(hotel_id), 
+    FOREIGN KEY (channel_id) REFERENCES reservation_method(channel_id)
+    );
+```
+We will use the first of the month for card_expiration always. We assume that all further restrictions are handled by the booking services.
+DID NOT INCLUDE ANCILLIARY IN RESERVATIONS YET!
+
+```{sql connection= my_connection}
+INSERT INTO reservation (reservation_id, est_arrival_date, est_departure_date, card_number, card_expiration, amount_rooms, room_price, bed_number, smoke, high_floor, guest_id, hotel_id, channel_id)
+VALUES ('r11', '11/06/2020', '11/07/2020', '3742885837672140', '01/01/2022', '1', '78', '1', 'No', 'Yes', 'a11', 'h11', 'c11'), 
+('r12', '11/07/2020', '11/10/2020', '3557162486807420', '05/01/2025', '1', '165', '2', 'No', 'No', 'a12', 'h12', 'c12'), ('r13', '11/09/2020', '11/11/2020', '3580159259721570', '12/01/2023', '1', '150', '2', 'Yes', 'Yes', 'a13', 'h13', 'c13'), ('r14', '11/11/2020', '11/13/2020', '2018218612241250', '11/01/2024', '1', '102',	'1', 'Yes', 'No', 'a14', 'h14', 'c14'), ('r15', '10/29/2020', '11/01/2020', '5602241259403700', '01/01/2022', '1', '180', '3', 'Yes', 'Yes', 'a15', 'h15', 'c15'), ('r16', '11/09/2020', '11/12/2020', '4102232443303040', '05/01/2021', '1', '120', '1', 'Yes', 'No', 'a16', 'h16', 'c16'), ('r17', '11/07/2020', '11/10/2020', '9449088987140000', '06/01/2022', '1', '140', '2', 'No', 'Yes', 'a17', 'h17', 'c17'), ('r18', '11/04/2020', '11/05/2020', '4844526297259470', '08/01/2023', '1', '160', '3', 'No', 'No', 'a18', 'h18', 'c18'), ('r19', '11/01/2020', '11/04/2020', '2719047610465000', '11/01/2026', '1', '220', '3', 'No', 'Yes', 'a19', 'h19', 'c19'), ('r20', '11/04/2020', '11/05/2020', '6201667373467110', '12/01/2022', '1', '80', '1', 'No', 'No', 'a20', 'h20', 'c20')
+```
+
+
+```{sql connection = my_connection}
+SELECT *
+FROM reservation
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE type_of_charge (
+type_of_charge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+charge_name VARCHAR(255) NOT NULL);
+```
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM type_of_charge;
+```
+
+
+```{sql connection = my_connection}
+-- Creating information for the type_of_charge
+INSERT INTO type_of_charge (charge_name)
+VALUES ('Room'), ('Mini Bar'), ('Extra Cleaning'), ('Restaurant'), ('Bar'), ('Hotel Cafe'), ('Spa'), ('Gift Shop'), ('Payment'), ('Seminar Room'), ('Dinning Room'), ('Breakfast')
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE charges (
+charge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+amount NUMERIC NOT NULL,
+date DATE NOT NULL,
+type_of_charge INT NOT NULL,
+guest_id INT NOT NULL,
+invoice_id INT NOT NULL,
+FOREIGN KEY (guest_id) REFERENCES guests (guest_id),
+FOREIGN KEY (invoice_id) REFERENCES invoice (invoice_id),
+FOREIGN KEY (type_of_charge) REFERENCES type_of_charge(type_of_charge_id)
+);
+```
+
+```{sql connection = my_connection}
+-- Which guest has spent the most money
+SELECT c.invoice_id, c.charge_id, SUM(c.amount) AS Total, c.type_of_charge, t.charge_name,i.guest_id, i.date
+FROM charges AS c
+INNER JOIN invoices AS i 
+ON c.invoice_id = i.invoice_id
+INNER JOIN type_of_charge AS t
+ON c.type_of_charge = t.type_of_charge_id
+WHERE t.charge_name != 'Payment' 
+GROUP BY i.guest_id
+ORDER BY Total DESC
+```
+
+
+
+```{sql connection = my_connection}
+INSERT INTO type_of_charge (charge_name)
+VALUES ('Room'), ('Mini Bar'), ('Extra Cleaning'), ('Restaurant'), ('Bar'), ('Hotel Cafe'), ('Spa'), ('Gift Shop'), ('Payment'), ('Seminar Room'), ('Dinning Room'), ('Breakfast')
+```
+
+
+
+```{sql connection= my_connection}
+INSERT INTO room (room_id, room_name, high_floor, room_type_ID, bed_number, hotel_ID, smoking, maintenance, balcony)
+VALUES( "H1_01", "Junior suite", NO, "Junior Suite", 2, "H1", NO, YES, NO),
+(H2_26, "Single", NO, "Single", 1, "H2", NO, YES, NO), 
+(H5_60, "Presidential Suite", YES, "Presidential Suite", 3, "H5", YES, YES, YES),
+(H1_43, "Double", NO, "Double", 2, "H1", NO, NO, NO),
+(H3_73, "Executive Suite", YES, "Executive Suite", 2, "H3", NO, YES, YES) 
+```
+
+
+
+
+```{sql connection = my_connection}
+-- Inserting information for charges
+INSERT INTO charges (amount, date, type_of_charge, guest_id, invoice_id)
+VALUES ('100', '11/10/2020', '1', '12', '1'), ('50', '11/11/2020', '5', '13', '2'), ('75', '11/13/2020', '6', '14', '3'), ('10', '11/01/2020', '5', '15', '4'), ('60', '11/05/2020', '5', '20', '5'), ('100', '11/04/2020', '5', '20', '5'), ('200', '11/10/2020', '5', '12', '1'), ('-290', '11/13/2020', '9', '12', '1')
+```
+
+
+```{sql connection= my_connection}
+CREATE TABLE invoices (
+invoice_id INTEGER PRIMARY KEY AUTOINCREMENT,
+date DATE NOT NULL,
+guest_id INT NOT NULL,
+FOREIGN KEY (guest_id) REFERENCES guests (guest_id)
+);
+```
+
+
+```{sql connection = my_connection}
+-- Inserting information for invoices
+INSERT INTO invoices (invoice_id, date, guest_id)
+VALUES ('1', '11/14/2020', 'a12'), ('2', '11/12/2020', 'a13'), ('3', '11/15/2020', 'a14'), ('4', '11/02/2020', 'a15'), ('5', '11/06/2020', 'a20');
+```
+
+
+
+
+```{sql connection = my_connection}
+INSERT INTO hotel (Hotel_ID, floors, name,phone, Street_name, City, State,Zip_Code, Country,  number_of_room, URL )
+VALUES (" H1", 9, "The Palace" , "+44 (0)07955321", "11 Belsize Road", "London", "Greater London", "NW3 7AL","United Kingdom", 92,
+"https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd"),
+("H2", 9, "The Castle", "+44 (0) 079955321"," 111 Kirby Corner Road", "Coventry", "Warwickshire", "CV4 7A", "United Kingdom", 90, "https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd"),
+("H3", 7, "Westwood Hotel", "+44 (0) 7938372820", "34 Gibbet Hill Road", "Coventry", "Warwickshire", "CV4 7AL", "United Kingdom", 73, "https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd)",
+("H4", 8, "Lansdown Hotel", " +44 (0) 3872903748", "36 Lansdown Road"," Bristol", "Avon", "BS6 6NS", "United Kingdom", 80, "https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd", ),
+("H5", 12, "Arlington Villas","+44(0) 3727494795", "10 Arlington Villas", "Bristol", "Avon"," BS8 1AD", "United Kingdom", 120, "https://github.com/MSBA-group-8/Data_Management/edit/master/Part_A.Rmd");
+```
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM invoices;
+```
+
+
+```{sql connection = my_connection}
+SELECT * 
+FROM charges
+```
+
+<<<<<<< HEAD
+=======
+
+```{sql connection = my_connection}
+SELECT * 
+FROM check_in_info
+```
+
+
+We assume that each room needs a separate check-in. If one reservation is made for many rooms, we will still have one check in for one room.
+>>>>>>> af56ce239d0a09652336ef69e189a1f9d578070b
+
+
+```{r}
+RSQLite::dbDisconnect(my_connection)
+```
