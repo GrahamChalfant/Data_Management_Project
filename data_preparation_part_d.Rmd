@@ -17,6 +17,7 @@ library(mapdeck)
 Part_C2 <- readRDS("Part_C2.rds") #Reading in data created in Part C
 #Consolidating 'Awaiting Inspection', 'AwaitingInspection', 'Awaiting Publication' and ' AwaitingPublication into 'Awaiting', and 'Pass and Eat Safe' and 'Pass' into 'Pass'
 plotting_data <- Part_C2 %>%  mutate(Rating_Value_updated = ifelse(RatingValue == "Pass" | RatingValue ==  "Pass and Eat Safe","Pass", ifelse(str_detect(RatingValue, "Awaiting"), "Awaiting", RatingValue)), Rating_value_numeric = as.numeric(Rating_Value_updated), Rating_value_categorie = ifelse(is.na(Rating_value_numeric), "Other", "Sticker Rating"))
+
 plotting_data <- plotting_data %>% drop_na(Longitude) #Creating data to plot in Leaflet by removing missing longitude and latitudes
 ```
 

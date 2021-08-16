@@ -24,13 +24,13 @@ server <- function(input,output){
     
     #Map on the 'Hygiene Plots' tab
     output$map <- renderLeaflet({
-        map2 #RDS map object created in 'data_prep_part_d.rmd'
+        map3 #RDS map object created in 'data_prep_part_d.rmd'
     })
     
     #2nd plot on the 'Hygiene Plots' tab
     output$ratings <- renderPlot({
         options(scipen=10000)
-        ggplot(plotting_data, aes(x = Rating_Value_updated, fill = Rating_Value_updated)) + geom_bar() + coord_flip() + labs( x= "Rating Value", y = "Count", fill = "Category") + theme(legend.position = "none")
+        ggplot(plotting_data, aes(x = Rating_Value_updated, fill = Rating_Value_updated)) + theme(text = element_text(size = 15)) + geom_bar() + coord_flip() + labs( x= "Rating Value", y = "Count", fill = "Category") + theme(legend.position = "none")
     })
     
     #'Filtered plot on the 'Filtered Plot' tab
@@ -41,3 +41,5 @@ server <- function(input,output){
     })
     
 }
+
+shinyApp(ui, server)

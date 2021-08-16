@@ -73,7 +73,7 @@ ui <- dashboardPage(
                     fluidRow(
                         #Creating box to display map on left half of 'hygieneplots' dashboard page
                         column(width = 6, 
-                               box(title="United Kingdom Business Hygiene Ratings", 
+                               box(title="United Kingdom Business Locations", 
                                    width=12,
                                    mapdeckOutput("map")
                                )
@@ -119,3 +119,5 @@ ui <- dashboardPage(
         )
     )
 )
+
+
